@@ -1,0 +1,68 @@
+name: hydrolitics
+
+services:
+  influxdb3-init:
+    image: alpine:3
+    environment:
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+    command:
+      - sh
+      - -c
+      - |
+        printf '{"token":"%s","name":"admin"}' "$$INFLUX_TOKEN" > /secrets/admin-token.json
+        chown 1500:1500 /secrets/admin-token.json
+        chmod 600 /secrets/admin-token.json
+        chown -R 1500:1500 /var/lib/influxdb3/data /var/lib/influxdb3/plugins
+    volumes:
+      - influx-secrets:/secrets
+      - influxdb3-data:/var/lib/influxdb3/data
+      - influxdb3-plugins:/var/lib/influxdb3/plugins
+
+  influxdb3:
+    image: influxdb:3-core   
+    container_name: hydrolitics-influxdb
+    depends_on:
+      influxdb3-init:
+        condition: service_completed_successfully
+    ports:
+      - "8181:8181"
+    command:
+      - influxdb3
+      - serve
+      - --node-id=hydrolitics-1
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --plugin-dir=/var/lib/influxdb3/plugins
+      - --admin-token-file=/secrets/admin-token.json
+    volumes:
+      - influxdb3-data:/var/lib/influxdb3/data
+      - influxdb3-plugins:/var/lib/influxdb3/plugins
+      - influx-secrets:/secrets:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep influxdb3 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  influxdb3-explorer:
+    image: influxdata/influxdb3-ui:1.9.0
+    container_name: hydrolitics-influxdb-explorer
+    depends_on:
+      influxdb3:
+        condition: service_healthy
+    ports:
+      - "8888:8080"
+    command: ["--mode=admin"]
+    environment:
+      SESSION_SECRET_KEY: ${INFLUX_EXPLORER_SECRET}
+    volumes:
+      - influxdb3-explorer-db:/db:rw
+    restart: unless-stopped
+
+volumes:
+  influxdb3-data:
+  influxdb3-plugins:
+  influxdb3-explorer-db:
+  influx-secrets:
