@@ -61,6 +61,15 @@ services:
       - influxdb3-explorer-db:/db:rw
     restart: unless-stopped
 
+  sensor-simulator:
+    build: ./sensor-simulator
+    container_name: hydrolitics-sensor-simulator
+    env_file:
+      - .env
+    # Publish interval (seconds). Override here as needed.
+    command: ["--interval", "300"]
+    restart: unless-stopped
+
 volumes:
   influxdb3-data:
   influxdb3-plugins:

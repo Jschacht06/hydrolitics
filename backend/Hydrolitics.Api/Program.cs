@@ -10,9 +10,19 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+
+//MQTT
 var mqttOptions = builder.Configuration.GetSection("Mqtt").Get<MqttOptions>() ?? new MqttOptions();
 builder.Services.AddSingleton(mqttOptions);
 builder.Services.AddHostedService<MqttService>();
+
+//Influx
+var influxOptions = builder.Configuration.GetSection("Influx").Get<InfluxOptions>() ?? new InfluxOptions();
+builder.Services.AddSingleton(influxOptions);
+builder.Services.AddSingleton<InfluxWriter>();
+
+
+
 
 var app = builder.Build();
 

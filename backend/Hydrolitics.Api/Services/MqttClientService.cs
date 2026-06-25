@@ -9,11 +9,13 @@ public class MqttService : BackgroundService
 {
     private readonly ILogger<MqttService> _logger;
     private readonly MqttOptions _options;
+    private readonly InfluxWriter _writer;
 
-    public MqttService(ILogger<MqttService> logger, MqttOptions options )
+    public MqttService(ILogger<MqttService> logger, MqttOptions options, InfluxWriter writer )
     {
         _logger = logger;
         _options = options;
+        _writer = writer;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,6 +42,8 @@ public class MqttService : BackgroundService
                 }
 
                 _logger.LogInformation("Basin {BasinId}: {Percent}% full", basinId, payload?.Percent);
+                await _writer.SaveAsync(basinId, payload!, stoppingToken);   // send to influx
+
             }
             catch (Exception ex)
             {
