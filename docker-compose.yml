@@ -61,6 +61,21 @@ services:
       - influxdb3-explorer-db:/db:rw
     restart: unless-stopped
 
+  backend:
+    build: ./backend/Hydrolitics.Api
+    container_name: hydrolitics-backend
+    depends_on:
+      influxdb3:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Influx__Host: http://influxdb3:8181
+    restart: unless-stopped
+
   sensor-simulator:
     build: ./sensor-simulator
     container_name: hydrolitics-sensor-simulator
