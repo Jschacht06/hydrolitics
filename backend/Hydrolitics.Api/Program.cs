@@ -20,6 +20,7 @@ builder.Services.AddHostedService<MqttService>();
 var influxOptions = builder.Configuration.GetSection("Influx").Get<InfluxOptions>() ?? new InfluxOptions();
 builder.Services.AddSingleton(influxOptions);
 builder.Services.AddSingleton<InfluxWriter>();
+builder.Services.AddSingleton<InfluxReader>();
 
 
 
